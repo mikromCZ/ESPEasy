@@ -31,7 +31,7 @@ void deepSleep(int delay)
   {
     log = F("Entering deep sleep in 30 seconds.");
     addLog(LOG_LEVEL_INFO, log);
-    delayMillis(30000);
+    delayBackground(30000);
     //disabled?
     if (!isDeepSleepEnabled())
     {
@@ -354,6 +354,7 @@ boolean timeOut(unsigned long timer)
 void statusLED(boolean traffic)
 {
   static int gnStatusValueCurrent = -1;
+  static long int gnLastUpdate = millis();
 
   if (Settings.Pin_status_led == -1)
     return;
@@ -379,8 +380,13 @@ void statusLED(boolean traffic)
     }
     else //connected
     {
-      nStatusValue -= STATUS_PWM_NORMALFADE; //ramp down slowly
-      nStatusValue = std::max(nStatusValue, STATUS_PWM_NORMALVALUE);
+      long int delta=millis()-gnLastUpdate;
+      if (delta>0 || delta<0 )
+      {
+        nStatusValue -= STATUS_PWM_NORMALFADE; //ramp down slowly
+        nStatusValue = std::max(nStatusValue, STATUS_PWM_NORMALVALUE);
+        gnLastUpdate=millis();
+      }
     }
   }
 
@@ -404,7 +410,7 @@ void statusLED(boolean traffic)
 /********************************************************************************************\
   delay in milliseconds with background processing
   \*********************************************************************************************/
-void delayMillis(unsigned long delay)
+void delayBackground(unsigned long delay)
 {
   unsigned long timer = millis() + delay;
   while (millis() < timer)
@@ -2584,4 +2590,14 @@ String getBearing(int degrees)
 
     return(bearing[int(degrees/22.5)]);
 
+}
+
+//escapes special characters in strings for use in html-forms
+void htmlEscape(String & html)
+{
+  html.replace("&",  "&amp;");
+  html.replace("\"", "&quot;");
+  html.replace("'",  "&#039;");
+  html.replace("<",  "&lt;");
+  html.replace(">",  "&gt;");
 }
